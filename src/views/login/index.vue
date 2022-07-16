@@ -2,10 +2,12 @@
   <div class="login-container">
     <!-- 导航栏 -->
     <van-nav-bar class="page-nav-bar" title="账号登录" left-arrow>
-      <template></template>
+      <template #left>
+        <van-icon slot="left" name="cross" />
+      </template>
     </van-nav-bar>
     <!-- 登录表单 -->
-    <van-form @submit="onSubmit">
+    <van-form ref="form" class="form" @submit="onSubmit">
       <van-field
         v-model="user.username"
         name="username"
@@ -32,56 +34,67 @@
 <script>
 // import { Toast } from 'vant'
 
-import { login } from '@/api/user'
+import { login, sendCode } from "@/api/user"
 
 export default {
-  data () {
+  data() {
     return {
       user: {
-        username: 'hzhmqd',
-        password: '123456'
+        username: "hzhmqd",
+        password: "123456",
       },
       userFormRules: {
         username: [
-          { required: true, message: '账号不能为空' },
+          { required: true, message: "账号不能为空" },
           {
             pattern: /^[a-zA-Z0-9_-]{4,16}$/,
-            message: '账号格式错误，请输入不低于四位并且不超出十六位的账号'
-          }
+            message: "账号格式错误，请输入不低于四位并且不超出十六位的账号",
+          },
         ],
         password: [
-          { required: true, message: '密码不能为空' },
-          { pattern: /^\d{6}$/, message: '密码格式错误,请输入六位数的密码' }
-        ]
-      }
+          { required: true, message: "密码不能为空" },
+          { pattern: /^\d{6}$/, message: "密码格式错误,请输入六位数的密码" },
+        ],
+      },
     }
   },
   methods: {
-    async onSubmit () {
-    // 获取表单数据
+    async onSubmit() {
+      // 获取表单数据
       const user = this.user
       // 表单验证
       this.$toast.loading({
-        message: '登录中...',
+        message: "登录中...",
         forbidClick: true,
-        duration: 0
+        duration: 5000,
       })
       // 提交表单请求登录
       try {
-        const { data } = await login(user)
+        const { data } = await login(this.user)
         // console.log(res)
         // console.log('登录成功', res)
-        this.$store.commit('setUser', data.data)
-        this.$toast.success('登录成功')
+        this.$store.commit("setUser", data.body)
+        console.log(data.body)
+        this.$toast.success("登录成功")
+        this.$router.push("/my")
       } catch (err) {
         if (err.response.status === 401) {
-          console.log('账号密码错误', err)
+          console.log("账号密码错误", err)
         } else {
-          console.log('登录失败', err)
+          console.log("登录失败", err)
         }
       }
-    }
-  }
+    },
+    async sendCode() {
+      try {
+        await this.$refs.form.validate("username")
+        await sendCode(this.username)
+      } catch (error) {
+        const status = error.response.status
+        this.$toast.fail(error.response.data.message)
+      }
+    },
+  },
 }
 </script>
 
